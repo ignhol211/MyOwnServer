@@ -1,6 +1,6 @@
 package com.example.server
 
-import com.google.gson.Gson
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 class RequestController (private val repository: Repository) {
 
     @PostMapping("crearUsuario")
-    fun crearUsuario(@RequestBody datos:Usuario):Any{
+    fun crearUsuario(@RequestBody datos:Usuario): Any? {
         val posibleUsuario = repository.findById(datos.nombre)
         return if(!posibleUsuario.isPresent){
             val usuario = Usuario(datos.nombre,datos.pass, clave = generarClaveAleatoria())
@@ -19,7 +19,7 @@ class RequestController (private val repository: Repository) {
             val usuario = repository.getById(datos.nombre)
             if (usuario.pass != datos.pass){
                 val error = Error(1,"Contraseña inválida")
-                error.toString()
+                error
             }else{
                 usuario.clave
             }
@@ -32,20 +32,27 @@ class RequestController (private val repository: Repository) {
         //val dataFromJson = gson.fromJson(datos,Mensaje::class.java)
         val posibleUsuario = repository.findById(datos.usuarioId)
 
-        return if(!posibleUsuario.isPresent){
+        return if(posibleUsuario.isPresent){
+            val usuario = posibleUsuario.get()
+            usuario.mensajes.add(datos)
+            repository.save(usuario)
+            "Success"
+        }else{
             val error = Error(2,"Usuario inexistente")
             error
-        }else{
-            val usuario = repository.getById(datos.usuarioId)
-            val mensaje = Mensaje(datos.texto,datos.usuarioId,System.currentTimeMillis())
-            usuario.mensajes?.add(mensaje)
-            return "Success"
         }
     }
 
-    @PostMapping("descargarMensajes")
-    fun descargarMensajes(@RequestBody datos:String):Any{
-       return repository.findAll().filter { it.mensajes != null }
+    @GetMapping("descargarMensajes")
+    fun descargarMensajes():ArrayList<Mensaje>{
+        val listToReturn = ListaDeMensajes(ArrayList())
+
+        (repository.findAll().filter { it.mensajes.isNotEmpty() }).forEach { it1 ->
+            it1.mensajes.let {
+                listToReturn.list.addAll(it)
+            }
+        }
+        return listToReturn.list
     }
 
     @PostMapping("descargarMensajesFiltrados")
@@ -53,13 +60,10 @@ class RequestController (private val repository: Repository) {
         return 0
     }
 
-
 }
 
 fun generarClaveAleatoria():String{
     var clave = ""
-    repeat(20){
-        clave += (0..9).random()
-    }
+    repeat(20){clave += (0..9).random()}
     return clave
 }

@@ -1,15 +1,11 @@
 package com.example.server
 
 import com.google.gson.Gson
-import javax.persistence.GeneratedValue
+import javax.persistence.Entity
 import javax.persistence.Id
 
-class Mensaje (var texto:String, var usuarioId:String, var time:Long) {
-
-    @Id
-    @GeneratedValue
-    var int = 0
-
+@Entity
+data class Mensaje (var texto:String, var usuarioId:String,@Id val id:Int, var time:Long = System.currentTimeMillis()) {
     override fun toString():String{
         val gson = Gson()
         return gson.toJson(this)
