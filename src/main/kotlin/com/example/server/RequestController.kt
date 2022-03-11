@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class RequestController (private val repository: Repository) {
 
+    /*
+    curl --request POST  --header "Content-type:application/json; charset=utf-8" --data "{\"nombre\":\"U4\",\"pass\":\"1234\"}" localhost:8083/crearUsuario
+    curl --request POST  --header "Content-type:application/json; charset=utf-8" --data "{\"nombre\":\"U2\",\"pass\":\"12\"}" localhost:8083/crearUsuario
+     */
+
     @PostMapping("crearUsuario")
     fun crearUsuario(@RequestBody datos:Usuario): Any? {
         val posibleUsuario = repository.findById(datos.nombre)
@@ -26,15 +31,17 @@ class RequestController (private val repository: Repository) {
         }
     }
 
-    @PostMapping("crearMensaje")
-    fun crearMensaje(@RequestBody datos:Mensaje):Any{
-        //val gson = Gson()
-        //val dataFromJson = gson.fromJson(datos,Mensaje::class.java)
-        val posibleUsuario = repository.findById(datos.usuarioId)
+    /*
+    curl --request POST  --header "Content-type:application/json" --data "{\"texto\":\"TextoCifrado2\",\"usuarioId\":\"U2\",\"id\":0}" localhost:8083/crearMensaje
+    curl --request POST  --header "Content-type:application/json" --data "{\"texto\":\"TextoCifrado4\",\"usuarioId\":\"U4\",\"id\":1}" localhost:8083/crearMensaje
+     */
 
+    @PostMapping("crearMensaje")
+    fun crearMensaje(@RequestBody mensaje:Mensaje):Any{
+        val posibleUsuario = repository.findById(mensaje.usuarioId)
         return if(posibleUsuario.isPresent){
             val usuario = posibleUsuario.get()
-            usuario.mensajes.add(datos)
+            usuario.mensajes.add(mensaje)
             repository.save(usuario)
             "Success"
         }else{
@@ -46,11 +53,8 @@ class RequestController (private val repository: Repository) {
     @GetMapping("descargarMensajes")
     fun descargarMensajes():ArrayList<Mensaje>{
         val listToReturn = ListaDeMensajes(ArrayList())
-
         (repository.findAll().filter { it.mensajes.isNotEmpty() }).forEach { it1 ->
-            it1.mensajes.let {
-                listToReturn.list.addAll(it)
-            }
+            listToReturn.list.addAll(it1.mensajes)
         }
         return listToReturn.list
     }
